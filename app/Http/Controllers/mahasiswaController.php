@@ -13,9 +13,19 @@ class mahasiswaController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $data = mahasiswa::orderBy('nim', 'desc')->paginate(5);
+        $katakunci = $request->katakunci;
+        $jumlahbaris = 4;
+        if(strlen($katakunci)){
+            $data = mahasiswa::where('nim', 'like',"%$katakunci%")
+                ->orWhere('nama', 'like',"%$katakunci%")
+                ->orWhere('jurusan', 'like',"%$katakunci%")
+                ->paginate($jumlahbaris);
+        } else{
+            $data = mahasiswa::orderBy('nim', 'desc')->paginate($jumlahbaris);
+        }
+        
         return view('mahasiswa.index')-> with('data', $data);
     }
 
@@ -80,7 +90,8 @@ class mahasiswaController extends Controller
      */
     public function edit($id)
     {
-        //
+        $data = mahasiswa::where('nim', $id)->first();
+        return view('mahasiswa.edit')->with('data',$data);
     }
 
     /**
@@ -92,7 +103,20 @@ class mahasiswaController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $request->validate([
+            'nama' => 'required',
+            'jurusan' => 'required',
+        ],
+        [
+            'nama.required'=> 'Nama wajib diisi!',
+            'jurusan.required'=> 'Jurusan wajib diisi!',
+    ]);
+        $data = [
+            'nama'=> $request->nama,
+            'jurusan'=> $request->jurusan,
+        ];
+        mahasiswa::where('nim', $id)->update($data);
+        return redirect()->to('mahasiswa')->with('success','Berhasil melakukan update data');
     }
 
     /**
@@ -103,6 +127,7 @@ class mahasiswaController extends Controller
      */
     public function destroy($id)
     {
-        //
+        mahasiswa::where('nim', $id)->delete();
+        return redirect()->to('mahasiswa')->with('success', 'Berhasil melakukan delete data');
     }
 }
